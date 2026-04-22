@@ -4,8 +4,8 @@ import threading
 import webbrowser
 from PIL import Image, ImageTk
 import io
-import requests
-from utils.helpers import get_local_ip
+import qrcode
+from utils.helpers import get_local_ip, generate_qr_data
 
 
 class MainWindow:
@@ -29,7 +29,7 @@ class MainWindow:
     def create_window(self):
         """创建主窗口"""
         self.root = tk.Tk()
-        self.root.title("vibe搭子 - 电脑端服务端")
+        self.root.title("VibeMic - 电脑端服务端")
         self.root.geometry(f"{self.base_width}x{self.base_height}")
         self.root.minsize(320, 400)
         self.root.resizable(True, True)
@@ -80,7 +80,7 @@ class MainWindow:
         # 标题
         self.title_label = tk.Label(
             self.content_frame,
-            text="vibe搭子",
+            text="VibeMic",
             font=self.fonts['title'],
             fg="#333333"
         )
@@ -92,7 +92,75 @@ class MainWindow:
             font=self.fonts['subtitle'],
             fg="#666666"
         )
-        self.subtitle_label.pack(pady=(0, int(15 * self.scale_factor)))
+        self.subtitle_label.pack(pady=(0, int(10 * self.scale_factor)))
+        
+        # 虚拟麦克风状态警告（如果没有安装）
+        self._create_vmic_warning()
+
+    def _create_vmic_warning(self):
+        """创建虚拟麦克风状态警告区域"""
+        # 检查虚拟麦克风状态
+        status = self.app.vmic_manager.check_installation_status()
+        
+        if not status['has_virtual_device']:
+            # 创建警告框架
+            warning_frame = tk.Frame(
+                self.content_frame,
+                bg="#FFF3CD",
+                highlightbackground="#FFC107",
+                highlightthickness=1
+            )
+            warning_frame.pack(
+                pady=(int(5 * self.scale_factor), int(10 * self.scale_factor)),
+                padx=int(20 * self.scale_factor),
+                fill="x"
+            )
+            
+            # 警告图标和标题
+            header_frame = tk.Frame(warning_frame, bg="#FFF3CD")
+            header_frame.pack(fill="x", padx=int(10 * self.scale_factor), pady=(int(8 * self.scale_factor), int(4 * self.scale_factor)))
+            
+            warning_icon = tk.Label(
+                header_frame,
+                text="⚠️",
+                font=("Microsoft YaHei", int(14 * self.scale_factor)),
+                bg="#FFF3CD",
+                fg="#856404"
+            )
+            warning_icon.pack(side="left")
+            
+            warning_title = tk.Label(
+                header_frame,
+                text="未检测到虚拟音频设备",
+                font=("Microsoft YaHei", int(11 * self.scale_factor), "bold"),
+                bg="#FFF3CD",
+                fg="#856404"
+            )
+            warning_title.pack(side="left", padx=(int(5 * self.scale_factor), 0))
+            
+            # 警告内容
+            warning_text = tk.Label(
+                warning_frame,
+                text="语音将通过音响播放，如需作为麦克风使用，请安装 VB-Cable",
+                font=("Microsoft YaHei", int(9 * self.scale_factor)),
+                bg="#FFF3CD",
+                fg="#856404",
+                wraplength=int(400 * self.scale_factor),
+                justify="left"
+            )
+            warning_text.pack(fill="x", padx=int(10 * self.scale_factor), pady=(0, int(4 * self.scale_factor)))
+            
+            # 下载链接
+            download_link = tk.Label(
+                warning_frame,
+                text="点击下载 VB-Cable",
+                font=("Microsoft YaHei", int(9 * self.scale_factor), "underline"),
+                bg="#FFF3CD",
+                fg="#0066CC",
+                cursor="hand2"
+            )
+            download_link.pack(fill="x", padx=int(10 * self.scale_factor), pady=(0, int(8 * self.scale_factor)))
+            download_link.bind("<Button-1>", lambda e: webbrowser.open("https://vb-audio.com/Cable/"))
 
         # 二维码区域
         qr_size = int(200 * self.scale_factor)
@@ -158,7 +226,19 @@ class MainWindow:
             font=self.fonts['normal'],
             cursor="hand2"
         )
-        autostart_check.pack(anchor="w", padx=int(10 * self.scale_factor), pady=int(8 * self.scale_factor))
+        autostart_check.pack(anchor="w", padx=int(10 * self.scale_factor), pady=int(5 * self.scale_factor))
+        
+        # 静默启动选项
+        self.silent_startup_var = tk.BooleanVar(value=self.app.is_silent_startup_enabled())
+        silent_startup_check = tk.Checkbutton(
+            settings_frame,
+            text="开机静默启动（不显示窗口）",
+            variable=self.silent_startup_var,
+            command=self._on_silent_startup_change,
+            font=self.fonts['normal'],
+            cursor="hand2"
+        )
+        silent_startup_check.pack(anchor="w", padx=int(10 * self.scale_factor), pady=int(5 * self.scale_factor))
 
         # 按钮区域
         btn_frame = tk.Frame(self.content_frame)
@@ -253,7 +333,7 @@ class MainWindow:
         # 标题
         self.title_label = tk.Label(
             self.content_frame,
-            text="vibe搭子",
+            text="VibeMic",
             font=self.fonts['title'],
             fg="#333333"
         )
@@ -265,7 +345,10 @@ class MainWindow:
             font=self.fonts['subtitle'],
             fg="#666666"
         )
-        self.subtitle_label.pack(pady=(0, int(15 * self.scale_factor)))
+        self.subtitle_label.pack(pady=(0, int(10 * self.scale_factor)))
+        
+        # 虚拟麦克风状态警告（如果没有安装）
+        self._create_vmic_warning()
 
         # 二维码区域
         qr_size = int(200 * self.scale_factor)
@@ -331,7 +414,19 @@ class MainWindow:
             font=self.fonts['normal'],
             cursor="hand2"
         )
-        autostart_check.pack(anchor="w", padx=int(10 * self.scale_factor), pady=int(8 * self.scale_factor))
+        autostart_check.pack(anchor="w", padx=int(10 * self.scale_factor), pady=int(5 * self.scale_factor))
+        
+        # 静默启动选项
+        self.silent_startup_var = tk.BooleanVar(value=self.app.is_silent_startup_enabled())
+        silent_startup_check = tk.Checkbutton(
+            settings_frame,
+            text="开机静默启动（不显示窗口）",
+            variable=self.silent_startup_var,
+            command=self._on_silent_startup_change,
+            font=self.fonts['normal'],
+            cursor="hand2"
+        )
+        silent_startup_check.pack(anchor="w", padx=int(10 * self.scale_factor), pady=int(5 * self.scale_factor))
 
         # 按钮区域
         btn_frame = tk.Frame(self.content_frame)
@@ -366,27 +461,47 @@ class MainWindow:
         self._refresh_qrcode()
 
     def _refresh_qrcode(self):
-        """刷新二维码"""
+        """刷新二维码 - 直接本地生成"""
         try:
-            # 从本地 HTTP 服务获取二维码
-            url = f"http://127.0.0.1:{self.app.http_port}/api/qrcode"
-            response = requests.get(url, timeout=5)
-            if response.status_code == 200:
-                image = Image.open(io.BytesIO(response.content))
-                # 根据缩放比例调整二维码大小
-                qr_size = int(180 * self.scale_factor)
-                image = image.resize((qr_size, qr_size), Image.Resampling.LANCZOS)
-                photo = ImageTk.PhotoImage(image)
-                self.qr_label.config(image=photo)
-                self.qr_label.image = photo  # 保持引用
+            # 获取二维码数据
+            qr_data = generate_qr_data(get_local_ip(), self.app.ws_port)
+            
+            # 使用 qrcode 库直接生成二维码
+            qr = qrcode.QRCode(
+                version=1,
+                error_correction=qrcode.constants.ERROR_CORRECT_L,
+                box_size=10,
+                border=4,
+            )
+            qr.add_data(qr_data)
+            qr.make(fit=True)
+            
+            # 生成 PIL 图像
+            img = qr.make_image(fill_color="black", back_color="white")
+            
+            # 根据缩放比例调整二维码大小
+            qr_size = int(180 * self.scale_factor)
+            img = img.resize((qr_size, qr_size), Image.Resampling.LANCZOS)
+            
+            # 转换为 Tkinter 可用的格式
+            photo = ImageTk.PhotoImage(img)
+            self.qr_label.config(image=photo)
+            self.qr_label.image = photo  # 保持引用
+            print(f"[UI] 二维码生成成功")
+            
         except Exception as e:
-            print(f"二维码加载失败: {e}")
-            self.qr_label.config(text="二维码加载失败\n请刷新重试")
+            print(f"[UI] 二维码生成失败: {e}")
+            self.qr_label.config(text="二维码生成失败\n请刷新重试")
 
     def _on_autostart_change(self):
         """开机自启状态变更"""
         enabled = self.autostart_var.get()
         self.app.set_autostart(enabled)
+
+    def _on_silent_startup_change(self):
+        """静默启动状态变更"""
+        enabled = self.silent_startup_var.get()
+        self.app.set_silent_startup(enabled)
 
     def _minimize_to_tray(self):
         """最小化到托盘"""

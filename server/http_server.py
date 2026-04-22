@@ -9,7 +9,7 @@ from server.websocket_server import WebSocketServer
 
 class HTTPServer:
     def __init__(self, ws_server: WebSocketServer, host="0.0.0.0", port=8080):
-        self.app = FastAPI(title="vibe搭子服务端")
+        self.app = FastAPI(title="VibeMic服务端")
         self.host = host
         self.port = port
         self.ws_server = ws_server
@@ -32,7 +32,7 @@ class HTTPServer:
         @self.app.get("/")
         async def root():
             return {
-                "name": "vibe搭子",
+                "name": "VibeMic",
                 "version": "1.0.0",
                 "status": "running"
             }
@@ -41,7 +41,7 @@ class HTTPServer:
         async def get_info():
             """获取服务端信息"""
             return {
-                "name": "vibe搭子",
+                "name": "VibeMic",
                 "version": "1.0.0",
                 "ip": self.local_ip,
                 "http_port": self.port,

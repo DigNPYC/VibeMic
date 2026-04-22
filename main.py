@@ -60,8 +60,13 @@ class CyberRuyiApp:
         except Exception:
             return False
 
-    def set_autostart(self, enabled):
-        """设置开机自启"""
+    def set_autostart(self, enabled, silent_startup=None):
+        """设置开机自启
+        
+        Args:
+            enabled: 是否启用开机自启
+            silent_startup: 是否静默启动，None表示使用当前设置
+        """
         try:
             key = reg.OpenKey(
                 reg.HKEY_CURRENT_USER,
@@ -74,18 +79,37 @@ class CyberRuyiApp:
                 # 获取当前程序路径
                 exe_path = sys.executable
                 script_path = os.path.abspath(__file__)
+                
+                # 确定是否静默启动
+                if silent_startup is None:
+                    silent_startup = self.is_silent_startup_enabled()
 
                 # 如果是打包后的 exe，直接注册 exe 路径
                 if exe_path.endswith("python.exe") or exe_path.endswith("pythonw.exe"):
-                    # 开发环境，使用 pythonw 运行，避免 CMD 窗口弹窗
-                    # 使用 --autostart 参数表示开机自启动（静默模式）
-                    pythonw_path = exe_path.replace("python.exe", "pythonw.exe")
+                    # 开发环境，强制使用 pythonw.exe 运行，避免 CMD 窗口弹窗
+                    # pythonw.exe 是无窗口版本的 Python 解释器
+                    exe_dir = os.path.dirname(exe_path)
+                    pythonw_path = os.path.join(exe_dir, "pythonw.exe")
+                    
+                    # 如果 pythonw.exe 不存在，尝试替换路径中的 python.exe
+                    if not os.path.exists(pythonw_path):
+                        pythonw_path = exe_path.replace("python.exe", "pythonw.exe")
+                    
+                    # 如果还是不存在，使用原路径（但这种情况不应该发生）
                     if not os.path.exists(pythonw_path):
                         pythonw_path = exe_path
-                    value = f'"{pythonw_path}" "{script_path}" --autostart'
+                    
+                    # 根据静默设置决定是否添加 --autostart 参数
+                    if silent_startup:
+                        value = f'"{pythonw_path}" "{script_path}" --autostart'
+                    else:
+                        value = f'"{pythonw_path}" "{script_path}"'
                 else:
-                    # 打包后的 exe，添加 --autostart 参数
-                    value = f'"{exe_path}" --autostart'
+                    # 打包后的 exe
+                    if silent_startup:
+                        value = f'"{exe_path}" --autostart'
+                    else:
+                        value = f'"{exe_path}"'
 
                 reg.SetValueEx(key, "CyberRuyi", 0, reg.REG_SZ, value)
             else:
@@ -98,6 +122,42 @@ class CyberRuyiApp:
             return True
         except Exception as e:
             print(f"设置开机自启失败: {e}")
+            return False
+    
+    def is_silent_startup_enabled(self):
+        """检查是否开启静默启动"""
+        try:
+            key = reg.OpenKey(
+                reg.HKEY_CURRENT_USER,
+                r"Software\CyberRuyi",
+                0,
+                reg.KEY_READ
+            )
+            try:
+                value, _ = reg.QueryValueEx(key, "SilentStartup")
+                reg.CloseKey(key)
+                return bool(value)
+            except FileNotFoundError:
+                reg.CloseKey(key)
+                return True  # 默认开启静默启动
+        except Exception:
+            return True  # 默认开启静默启动
+    
+    def set_silent_startup(self, enabled):
+        """设置静默启动"""
+        try:
+            # 创建或打开应用配置项
+            key = reg.CreateKey(reg.HKEY_CURRENT_USER, r"Software\CyberRuyi")
+            reg.SetValueEx(key, "SilentStartup", 0, reg.REG_DWORD, 1 if enabled else 0)
+            reg.CloseKey(key)
+            
+            # 如果开机自启已启用，更新注册表
+            if self.is_autostart_enabled():
+                self.set_autostart(True, enabled)
+            
+            return True
+        except Exception as e:
+            print(f"设置静默启动失败: {e}")
             return False
 
     def toggle_autostart(self):
@@ -128,7 +188,7 @@ class CyberRuyiApp:
         # 静默模式下不打印启动信息到控制台
         if not self.silent_mode:
             print("=" * 50)
-            print("vibe搭子 - 电脑端服务端")
+            print("VibeMic - 电脑端服务端")
             print("=" * 50)
             
             # 显示虚拟麦克风状态
@@ -151,6 +211,14 @@ class CyberRuyiApp:
         # 启动 HTTP 服务（在独立线程中）
         http_thread = threading.Thread(target=self.http_server.run, daemon=True)
         http_thread.start()
+        
+        # 等待服务启动完成
+        import time
+        if not self.silent_mode:
+            print("[系统] 正在启动服务...")
+        time.sleep(2)  # 给服务启动留出时间
+        if not self.silent_mode:
+            print("[系统] 服务已就绪\n")
 
         # 启动系统托盘
         self.tray_icon.run()
@@ -170,7 +238,7 @@ class CyberRuyiApp:
 def main():
     """程序入口"""
     # 解析命令行参数
-    parser = argparse.ArgumentParser(description='vibe搭子 - 电脑端服务端')
+    parser = argparse.ArgumentParser(description='VibeMic - 电脑端服务端')
     parser.add_argument('--autostart', action='store_true', help='开机自启动模式（静默启动，不显示窗口）')
     parser.add_argument('--silent', action='store_true', help='静默模式，不显示主窗口')
     args = parser.parse_args()

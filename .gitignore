@@ -1,0 +1,57 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+ENV/
+env/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# PyInstaller 构建输出
+build/
+dist/*.exe
+dist/*.zip
+dist/*.tar.gz
+
+# PyInstaller spec 文件 (通常不需要上传，可根据需要保留)
+# 如果需要在团队间共享spec文件配置，可以注释掉这一行
+*.spec
+
+# 临时文件和日志
+*.log
+*.tmp
+*.temp
+
+# 测试和调试文件
+test_*.py
+check_*.py
+check_*.bat
+generate_*.py
+
+# 构建脚本 (本地使用)
+build.py
+build_exe.ps1
+start.bat
+
+# 本地开发用的图标文件
+icon.ico
+小程序图标.png

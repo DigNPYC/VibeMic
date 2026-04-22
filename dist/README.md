@@ -16,14 +16,15 @@
 
 ```
 VibeMic/
-├── main.py               # 程序入口
-├── requirements.txt      # Python 依赖
-├── server/               # 网络服务
-├── keyboard/             # 键盘模拟
-├── audio/                # 音频处理
-├── tray/                 # 系统托盘
-├── ui/                   # 界面
-└── utils/                # 工具函数
+├── desktop/              # 电脑端服务端 (Python)
+│   ├── main.py           # 程序入口
+│   ├── requirements.txt  # Python 依赖
+│   ├── server/           # 网络服务
+│   ├── keyboard/         # 键盘模拟
+│   ├── audio/            # 音频处理
+│   ├── tray/             # 系统托盘
+│   ├── ui/               # 界面
+│   └── utils/            # 工具函数
 ├── miniprogram/          # 微信小程序
 │   ├── pages/            # 页面
 │   ├── utils/            # 工具函数
@@ -42,9 +43,9 @@ VibeMic/
 
 ### 安装步骤
 
-1. 进入项目目录：
+1. 进入 desktop 目录：
 ```bash
-cd VibeMic
+cd desktop
 ```
 
 2. 创建虚拟环境（可选但推荐）：

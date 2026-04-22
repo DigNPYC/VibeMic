@@ -74,7 +74,7 @@ class TrayIcon:
         """更新连接状态图标"""
         if self.icon:
             self.icon.icon = self._create_image(connected_count > 0)
-            self.icon.title = f"vibe搭子 - 已连接({connected_count}台设备)" if connected_count > 0 else "vibe搭子 - 等待连接"
+            self.icon.title = f"VibeMic - 已连接({connected_count}台设备)" if connected_count > 0 else "VibeMic - 等待连接"
 
     def run(self):
         """启动托盘图标"""
@@ -89,7 +89,7 @@ class TrayIcon:
         self.icon = pystray.Icon(
             "vibe_dazi",
             self._create_image(False),
-            "vibe搭子 - 等待连接",
+            "VibeMic - 等待连接",
             menu
         )
 

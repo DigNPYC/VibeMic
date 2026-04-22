@@ -74,11 +74,7 @@ python main.py
 
 ## 微信小程序部署
 
-1. 下载并安装 [微信开发者工具](https://developers.weixin.qq.com/miniprogram/dev/devtools/download.html)
-2. 打开微信开发者工具，选择「导入项目」
-3. 选择 `miniprogram` 目录
-4. 填写自己的 AppID（或选择测试号）
-5. 点击「编译」即可预览
+1. 微信搜索 VibeMic 小程序
 
 ### 注意
 

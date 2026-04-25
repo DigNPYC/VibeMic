@@ -28,13 +28,10 @@ desktop.ini
 
 # PyInstaller 构建输出
 build/
-dist/*.exe
-dist/*.zip
-dist/*.tar.gz
+dist/
 
-# PyInstaller spec 文件 (通常不需要上传，可根据需要保留)
-# 如果需要在团队间共享spec文件配置，可以注释掉这一行
-*.spec
+# PyInstaller spec 文件 (需要保留用于构建)
+# *.spec
 
 # 临时文件和日志
 *.log
@@ -52,6 +49,6 @@ build.py
 build_exe.ps1
 start.bat
 
-# 本地开发用的图标文件
-icon.ico
+# 本地开发用的图标文件 (icon.ico 是构建所需，保留跟踪)
+# icon.ico
 小程序图标.png

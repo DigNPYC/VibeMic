@@ -2,6 +2,7 @@ import pystray
 from PIL import Image, ImageDraw
 import threading
 import os
+import sys
 
 
 class TrayIcon:
@@ -12,13 +13,15 @@ class TrayIcon:
         self.is_running = False
 
     def _create_image(self, connected=False):
-        """创建托盘图标"""
-        # 尝试从文件加载自定义图标
-        icon_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'icon.png')
+        if getattr(sys, 'frozen', False):
+            base_path = sys._MEIPASS
+        else:
+            base_path = os.path.dirname(os.path.dirname(__file__))
+        
+        icon_path = os.path.join(base_path, 'icon.png')
         if os.path.exists(icon_path):
             try:
                 img = Image.open(icon_path)
-                # 调整图标大小为 64x64
                 img = img.resize((64, 64), Image.Resampling.LANCZOS)
                 return img
             except Exception as e:
@@ -61,12 +64,10 @@ class TrayIcon:
             self.app.exit_app()
 
     def _update_menu(self):
-        """更新菜单"""
         if self.icon:
-            autostart_checked = self.app and hasattr(self.app, 'is_autostart_enabled') and self.app.is_autostart_enabled()
             self.icon.menu = pystray.Menu(
                 pystray.MenuItem("显示主窗口", self._on_show_window),
-                pystray.MenuItem("开机自启", self._on_toggle_autostart, checked=lambda item: autostart_checked),
+                pystray.MenuItem("开机自启", self._on_toggle_autostart, checked=lambda item: self.app.is_autostart_enabled()),
                 pystray.MenuItem("退出", self._on_exit)
             )
 
@@ -77,12 +78,11 @@ class TrayIcon:
             self.icon.title = f"VibeMic - 已连接({connected_count}台设备)" if connected_count > 0 else "VibeMic - 等待连接"
 
     def run(self):
-        """启动托盘图标"""
         self.is_running = True
 
         menu = pystray.Menu(
             pystray.MenuItem("显示主窗口", self._on_show_window),
-            pystray.MenuItem("开机自启", self._on_toggle_autostart),
+            pystray.MenuItem("开机自启", self._on_toggle_autostart, checked=lambda item: self.app.is_autostart_enabled()),
             pystray.MenuItem("退出", self._on_exit)
         )
 

@@ -76,40 +76,32 @@ class CyberRuyiApp:
             )
 
             if enabled:
-                # 获取当前程序路径
-                exe_path = sys.executable
-                script_path = os.path.abspath(__file__)
-                
-                # 确定是否静默启动
                 if silent_startup is None:
                     silent_startup = self.is_silent_startup_enabled()
 
-                # 如果是打包后的 exe，直接注册 exe 路径
-                if exe_path.endswith("python.exe") or exe_path.endswith("pythonw.exe"):
-                    # 开发环境，强制使用 pythonw.exe 运行，避免 CMD 窗口弹窗
-                    # pythonw.exe 是无窗口版本的 Python 解释器
-                    exe_dir = os.path.dirname(exe_path)
-                    pythonw_path = os.path.join(exe_dir, "pythonw.exe")
-                    
-                    # 如果 pythonw.exe 不存在，尝试替换路径中的 python.exe
-                    if not os.path.exists(pythonw_path):
-                        pythonw_path = exe_path.replace("python.exe", "pythonw.exe")
-                    
-                    # 如果还是不存在，使用原路径（但这种情况不应该发生）
-                    if not os.path.exists(pythonw_path):
-                        pythonw_path = exe_path
-                    
-                    # 根据静默设置决定是否添加 --autostart 参数
-                    if silent_startup:
-                        value = f'"{pythonw_path}" "{script_path}" --autostart'
-                    else:
-                        value = f'"{pythonw_path}" "{script_path}"'
-                else:
-                    # 打包后的 exe
+                if getattr(sys, 'frozen', False):
+                    exe_path = sys.executable
                     if silent_startup:
                         value = f'"{exe_path}" --autostart'
                     else:
                         value = f'"{exe_path}"'
+                else:
+                    exe_path = sys.executable
+                    script_path = os.path.abspath(__file__)
+                    
+                    exe_dir = os.path.dirname(exe_path)
+                    pythonw_path = os.path.join(exe_dir, "pythonw.exe")
+                    
+                    if not os.path.exists(pythonw_path):
+                        pythonw_path = exe_path.replace("python.exe", "pythonw.exe")
+                    
+                    if not os.path.exists(pythonw_path):
+                        pythonw_path = exe_path
+                    
+                    if silent_startup:
+                        value = f'"{pythonw_path}" "{script_path}" --autostart'
+                    else:
+                        value = f'"{pythonw_path}" "{script_path}"'
 
                 reg.SetValueEx(key, "CyberRuyi", 0, reg.REG_SZ, value)
             else:

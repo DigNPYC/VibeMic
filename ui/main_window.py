@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import threading
 import webbrowser
+import sys
+import os
 from PIL import Image, ImageTk
 import io
 import qrcode
@@ -19,7 +21,7 @@ class MainWindow:
         
         # 缩放相关
         self.base_width = 480
-        self.base_height = 620
+        self.base_height = 670
         self.scale_factor = 1.0
         
         # 存储所有需要缩放的字体
@@ -34,6 +36,9 @@ class MainWindow:
         self.root.minsize(320, 400)
         self.root.resizable(True, True)
         
+        # 设置窗口图标（任务栏、任务管理器显示）
+        self._set_window_icon()
+        
         # 设置窗口关闭行为
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
         
@@ -46,6 +51,36 @@ class MainWindow:
         
         # 绑定窗口大小变化事件
         self.root.bind("<Configure>", self._on_resize)
+
+    def _set_window_icon(self):
+        """设置窗口图标，使任务栏显示自定义图标而非默认 Python 图标"""
+        if not self.root:
+            return
+        
+        # 获取图标文件路径
+        if getattr(sys, 'frozen', False):
+            base_path = sys._MEIPASS
+        else:
+            base_path = os.path.dirname(os.path.dirname(__file__))
+        
+        icon_path = os.path.join(base_path, 'icon.ico')
+        
+        # 方式1: 使用 wm_iconbitmap 设置窗口图标（.ico 格式）
+        try:
+            self.root.wm_iconbitmap(icon_path)
+        except Exception:
+            pass
+        
+        # 方式2: 使用 iconphoto 设置图标（支持 PNG，用于任务栏）
+        png_path = os.path.join(base_path, 'icon.png')
+        try:
+            img = Image.open(png_path)
+            img = img.resize((32, 32), Image.Resampling.LANCZOS)
+            photo = ImageTk.PhotoImage(img)
+            self.root.iconphoto(False, photo)
+            self._icon_photo = photo
+        except Exception:
+            pass
 
     def _create_fonts(self):
         """创建字体字典"""
